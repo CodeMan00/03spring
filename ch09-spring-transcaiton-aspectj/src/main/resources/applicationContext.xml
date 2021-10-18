@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd">
+
+<!--    配置数据库连接信息-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+
+<!--    配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxActive" value="${jdbc.maxActive}"/>
+    </bean>
+
+<!--    声明mybatis的SqlSessionFactory对象-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="classpath:mybatis.xml"/>
+    </bean>
+
+<!--    声明dao的代理对象-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.bjpowdernode.dao"/>
+    </bean>
+
+<!--    声明service-->
+    <bean id="buyService" class="com.bjpowdernode.service.impl.BuyGoodsServiceImpl">
+<!--        为什么注释了？
+                因为在BuyGoodsServiceImpl类中，通过使用注解的方式给saleDao、saleDao赋值了，
+                而是不是通过set注入的方式，如果使用set注入的方式，那么需要在因为在BuyGoodsServiceImpl类中
+                设置set方法，并且把下面的注释打开。
+-->
+<!--        <property name="saleDao" ref="saleDao"/>-->
+<!--        <property name="saleDao" ref="goodsDao"/>-->
+    </bean>
+
+
+
+<!--   使用spring的事务管理  这是事务管理的【第一种方式】，是通过【注解】的方式 -->
+<!--    声明事务管理器  id自定义-->
+<!--    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">-->
+<!--&lt;!&ndash;        连接的数据库&ndash;&gt;-->
+<!--        <property name="dataSource" ref="dataSource"/>-->
+<!--    </bean>-->
+
+<!--    开启注解驱动,告诉spring使用注解管理事务,创建代理对象
+    transaction-manager:事务管理器对象的id
+-->
+<!--    <tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>-->
+
+
+
+    <!--这是事务处理的【第二种方式】，通过在【配置文件的方式】声明式的事务处理  和源代码完全分离-->
+<!--    1。声明事务管理器对象-->
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+<!--    2.声明业务方法 它的事务属性【隔离级别，传播行为，超时时间】
+            id：自定义名称，表示<tx:advice> </tx:advice>之间的配置内容
+-->
+    <tx:advice id="transactionAdvice" transaction-manager="dataSourceTransactionManager">
+        <!--            要配置事务属性-->
+        <tx:attributes>
+        <!--            要给具体的方法配置事务属性，method可以有多个，分别给不同的方法设置事务属性
+                name:  形式1）方法名称，不带包和类名，匹配   形式2）方法可以通过通配符*（表示任意字符）进行配置。
+                propagation:传播行为，枚举值
+                isolation:隔离级别
+                rollback-for:你指定的异常类名，全限定类名，表示指定的异常发生后，事务一定进行回滚。
+            -->
+            <tx:method name="buy" propagation="REQUIRED" isolation="DEFAULT"
+                       rollback-for="java.lang.NullPointerException , com.bjpowdernode.exception.NoEnoughException"/>
+
+            <!--            对于大量的方法需要进行事务管理，所以一个一个的指定方法是不可行的。我们使用通配符的形式指定要进行事务处理的方法
+                        name="add*" 表示对add开头的方法都进行事务处理-->
+            <tx:method name="add*" propagation="REQUIRED" isolation="DEFAULT"
+                       rollback-for="java.lang.NullPointerException,com.bjpowdernode.exception.NoEnoughException"/>
+<!--            对所有的删除方法进行事务处理-->
+            <tx:method name="remove*" propagation="REQUIRED"/>
+<!--            对所有的修改方法进行事务处理-->
+            <tx:method name="modify" propagation="REQUIRED" />
+<!--            对所有的查询方法进行事务处理  read-only="true"表示只读-->
+            <tx:method name="*" propagation="SUPPORTS" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+
+
+<!--   3. 配置aop-->
+    <aop:config>
+<!--        配置切入点表达式：指定那些包中的类，需要进行事务
+                id：切入点表达式的名称，唯一值
+                expression: 切入点表达式，指定那些类要使用事务，aspectj会创建代理对象
+                                execution:它的值表示的是所有的service包中的方法-->
+        <aop:pointcut id="servicePt" expression="execution(* *..service..*.*(..))"/>
+        <!--配置增强器:关联advice和pointcut
+                advice-ref:通知，上面tx:advice哪里的配置
+                pointcut-ref：切入点表达式的id-->
+        <aop:advisor advice-ref="transactionAdvice" pointcut-ref="servicePt"/>
+    </aop:config>
+</beans>

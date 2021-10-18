@@ -1,0 +1,11 @@
+# Project exclude paths
+/ch01-hello-spring/target/
+/ch02-di-xml/target/
+/ch03-di-anno/target/
+/ch05-aop-asceptJ/target/
+/ch06-spring-mybatis/target/
+/ch07-spring-trascation/target/
+/ch08-spring-transcation-anno/target/
+/ch09-spring-transcaiton-aspectj/target/
+/ch10-spring-web/target/
+/out/

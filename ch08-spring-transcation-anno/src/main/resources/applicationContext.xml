@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+<!--    配置数据库连接信息-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+
+<!--    配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxActive" value="${jdbc.maxActive}"/>
+    </bean>
+
+<!--    声明mybatis的SqlSessionFactory对象-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="classpath:mybatis.xml"/>
+    </bean>
+
+<!--    声明dao的代理对象-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.bjpowdernode.dao"/>
+    </bean>
+
+<!--    声明service-->
+    <bean id="buyService" class="com.bjpowdernode.service.impl.BuyGoodsServiceImpl">
+<!--        为什么注释了？
+                因为在BuyGoodsServiceImpl类中，通过使用注解的方式给saleDao、saleDao赋值了，
+                而是不是通过set注入的方式，如果使用set注入的方式，那么需要在因为在BuyGoodsServiceImpl类中
+                设置set方法，并且把下面的注释打开。
+-->
+<!--        <property name="saleDao" ref="saleDao"/>-->
+<!--        <property name="saleDao" ref="goodsDao"/>-->
+    </bean>
+
+
+<!--   使用spring的事务管理 -->
+<!--    声明事务管理器  id自定义-->
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+<!--        连接的数据库-->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+<!--    开启注解驱动,告诉spring使用注解管理事务,创建代理对象
+    transaction-manager:事务管理器对象的id
+-->
+    <tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
+</beans>

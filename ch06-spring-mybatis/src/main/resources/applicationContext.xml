@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+
+<!--  把数据库的配置信息,写在一个独立的文件,编译修改数据库的内容 spring知道jdbc.properties文件的位置-->
+    <context:property-placeholder location="jdbc.properties"/>
+
+
+<!--    声明数据源 Datasource ,作用是连接数据库-->
+    <bean id="mysql" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+<!--        set注入给DruidDataSource 提供连接数据库信息-->
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxActive" value="${jdbc.maxActive}"/>
+    </bean>
+
+
+<!--  声明mybatis中提供的SqlSessionFactoryBean对象,这个类内部会创建SqlSessionFactory对象-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+<!--        set注入,把数据库连接池赋给了datasource属性-->
+        <property name="dataSource" ref="mysql"></property>
+<!--        mybatis主配置文件的位置
+configLocation是Resource类型,读取配置文件的.他的赋值是通过value属性,指定文件的路径,使用classPath来表示文件的路径
+-->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+    </bean>
+
+
+
+<!--    创建dao对象  使用SqlSession的getMapper(StudentDao.xml)
+    MapperScannerConfigurer:在内部调用getMapper()生成每个dao接口的代理对象
+-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+<!--        指定SqlSessionFactory对象的id-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+<!--        指定dao接口所在的包名,如果有多个包,包与包之间使用逗号隔开
+        MapperScannerConfigurer会扫描这个包中的所有接口,把每个接口都执行一次getMapper()方法,得到每一个接口的dao对象
+        创建好的dao对象,放入到spring的容器中
+-->
+        <property name="basePackage" value="com.bjpowdernode.dao"/>
+    </bean>
+
+
+<!--    声明service-->
+    <bean id="studentService" class="com.bjpowdernode.service.impl.StudentServiceImpl">
+<!--        name是StudentServiceImpl类中的属性-->
+        <property name="dao" ref="studentDao"/>
+    </bean>
+</beans>

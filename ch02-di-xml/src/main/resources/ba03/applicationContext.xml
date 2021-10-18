@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<!--    声明Student对象
+
+        di给属性赋值：
+            简单类型：spring中规定java的基本数据类型和String类型都是简单类型
+            1.set注入：spring调用类的set方法，可以在set方法中完成属性赋值
+                1) 简单类型的set注入：
+                    <bean id="xxx" class="xxx" >
+                        <property name=“属性名称” value="属性值“ />   一个property只能给一个属性赋值
+                    </bean>
+                    set注入，只会调用类的set方法，并不会检测该方法对应的属性是否存在，只要set方法存在，
+                        即使该方法对应的属性不存在，也能正常执行。
+                    set注入，只会调用类的set方法，并不会检测，该方法是否把值赋给属性，如果我们在类中定义了
+                        set方法，且方法体为空，spring仍能执行，结果就是没有赋值罢了。
+
+                 2)引用类型的set注入，spring调用类的set方法
+                    <bean id="xxx" class="xxx" >
+                        <property name=“属性名称” ref="bean的id“ />   一个property只能给一个属性赋值
+                    </bean>
+
+
+            2.构造注入：
+                    spring调用类的有参构造方法，在创建对象的同时，在构造方法中给属性赋值。
+                    构造注入使用<constructor-arg>标签
+                    <constructor-arg>标签，一个<constructor-arg>标签表示构造方法中的一个参数
+                    <constructor-arg>标签属性：
+                        name：表示构造方法的形参名
+                        index：表示构造方法参数的位置，从左往右，以0，1，2的位置
+                        value :构造方法的形参是简单类型，使用value
+                        ref: 构造方法的形参是引用类型，使用ref
+-->
+
+<!-- 如果school在student类初始化时还未创建，那么spring会二次扫描，此时school已经创建，所以ref属性中引用的school
+类的声明的位置，放在哪里都无所谓-->
+    <bean id="student" class="com.bjpowernode.ba03.Student01" >
+        <constructor-arg name="name" value="张三"/>
+        <constructor-arg name="age" value="22"/>
+        <constructor-arg name="school" ref="school"/>
+    </bean>
+
+<!--    使用index属性与student的形参进行匹配-->
+    <bean id="student01" class="com.bjpowernode.ba03.Student01">
+        <constructor-arg index="0" value="李四"/>
+        <constructor-arg index="1" value="12"/>
+        <constructor-arg index="2" ref="school"/>
+    </bean>
+
+<!--    省略index属性 -->
+    <bean id="student02" class="com.bjpowernode.ba03.Student01">
+        <constructor-arg value="王五"/>
+        <constructor-arg value="12"/>
+        <constructor-arg ref="school"/>
+    </bean>
+
+<!--    声明一个school对象-->
+    <bean id="school" class="com.bjpowernode.ba03.School">
+        <property name="name" value="北京大学"/>
+        <property name="address" value="北京市"/>
+    </bean>
+
+<!--    创建File  使用构造注入-->
+    <bean id="file" class="java.io.File">
+        <constructor-arg name="parent" value="d:/"/>
+        <constructor-arg name="child" value="lala.jpg"/>
+    </bean>
+</beans>
